@@ -1,0 +1,34 @@
+import { test, expect } from '@playwright/test';
+
+test('test', async ({ page }) => {
+  await page.goto('https://efgp.yuchens.com:8086/NaNaWeb/GP//ForwardIndex?hdnMethod=findIndexForward');
+  await page.getByRole('textbox', { name: 'LDAP User ID' }).click();
+  await page.getByRole('textbox', { name: 'LDAP User ID' }).fill('boyawu');
+  await page.getByRole('textbox', { name: 'LDAP User ID' }).press('Tab');
+  await page.getByRole('textbox', { name: 'Password' }).fill('qwertyuiop[]');
+  await page.getByRole('textbox', { name: 'Password' }).press('Enter');
+  await page.locator('iframe[name="ifmNavigator"]').contentFrame().locator('i').nth(3).click();
+  await page.locator('iframe[name="ifmFucntionLocation"]').contentFrame().getByRole('textbox', { name: 'Search Process Name' }).click();
+  await page.locator('iframe[name="ifmFucntionLocation"]').contentFrame().getByRole('textbox', { name: 'Search Process Name' }).fill('工時申請單');
+  await page.locator('iframe[name="ifmFucntionLocation"]').contentFrame().getByRole('textbox', { name: 'Search Process Name' }).press('Enter');
+  await page.locator('iframe[name="ifmFucntionLocation"]').contentFrame().getByText('工時申請單').nth(2).click();
+  const page1Promise = page.waitForEvent('popup');
+  await page.locator('iframe[name="ifmFucntionLocation"]').contentFrame().locator('iframe[name="ifmAppLocation"]').contentFrame().locator('#ProjNoDiaglog_btn').click();
+  const page1 = await page1Promise;
+  await page1.getByRole('link').click();
+  await page1.locator('[id="_cuzDataChooser_criteria_0"]').click();
+  await page1.locator('[id="_cuzDataChooser_criteria_0"]').fill('DY23-0742');
+  await page1.getByRole('button', { name: 'Query' }).click();
+  await page1.getByRole('cell', { name: '莊旭偉' }).click();
+  const page2Promise = page.waitForEvent('popup');
+  await page.locator('iframe[name="ifmFucntionLocation"]').contentFrame().locator('iframe[name="ifmAppLocation"]').contentFrame().locator('#WorkItem_btn').click();
+  const page2 = await page2Promise;
+  await page2.getByRole('cell', { name: '教育訓練(Education Training)' }).click();
+  await page.locator('iframe[name="ifmFucntionLocation"]').contentFrame().locator('iframe[name="ifmAppLocation"]').contentFrame().locator('#WorkDate_btn').click();
+  await page.locator('iframe[name="ifmFucntionLocation"]').contentFrame().locator('iframe[name="ifmAppLocation"]').contentFrame().getByText('19').click();
+  await page.locator('iframe[name="ifmFucntionLocation"]').contentFrame().locator('iframe[name="ifmAppLocation"]').contentFrame().locator('#WorkHour').click();
+  await page.locator('iframe[name="ifmFucntionLocation"]').contentFrame().locator('iframe[name="ifmAppLocation"]').contentFrame().locator('#WorkHour').fill('8');
+  await page.locator('iframe[name="ifmFucntionLocation"]').contentFrame().locator('iframe[name="ifmAppLocation"]').contentFrame().locator('#WorkDesc').click();
+  await page.locator('iframe[name="ifmFucntionLocation"]').contentFrame().locator('iframe[name="ifmAppLocation"]').contentFrame().locator('#WorkDesc').fill('test');
+  await page.locator('iframe[name="ifmFucntionLocation"]').contentFrame().getByTitle('Initiate').click();
+});
