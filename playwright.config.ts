@@ -4,9 +4,10 @@ import { defineConfig, devices } from '@playwright/test';
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
+import dotenv from 'dotenv';
+import path from 'path';
+
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -26,10 +27,13 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* 2. 開發階段強制開啟 Trace，這對看紅點非常重要 */
-    trace: 'on', 
-  
+    trace: 'on',
+
+    /* 內網 BPM 常為自簽或企業 CA，Firefox/WebKit 預設會擋 TLS */
+    ignoreHTTPSErrors: true,
+
     /* 3. 讓報工時的時候慢一點，不要像機器人閃現 (選配) */
-    // launchOptions: { slowMo: 500 }, 
+    // launchOptions: { slowMo: 500 },
   },
 
   /* Configure projects for major browsers */

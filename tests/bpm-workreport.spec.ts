@@ -1,11 +1,19 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 
 test('test', async ({ page }) => {
-  await page.goto('https://efgp.yuchens.com:8086/NaNaWeb/GP//ForwardIndex?hdnMethod=findIndexForward');
+  const baseUrl = process.env.BPM_BASE_URL;
+  const user = process.env.PLAYWRIGHT_BPM_USER;
+  const password = process.env.PLAYWRIGHT_BPM_PASSWORD;
+
+  if (!baseUrl || !user || !password) {
+    throw new Error('缺少必要環境變數: BPM_BASE_URL / PLAYWRIGHT_BPM_USER / PLAYWRIGHT_BPM_PASSWORD');
+  }
+
+  await page.goto(baseUrl);
   await page.getByRole('textbox', { name: 'LDAP User ID' }).click();
-  await page.getByRole('textbox', { name: 'LDAP User ID' }).fill('boyawu');
+  await page.getByRole('textbox', { name: 'LDAP User ID' }).fill(user);
   await page.getByRole('textbox', { name: 'LDAP User ID' }).press('Tab');
-  await page.getByRole('textbox', { name: 'Password' }).fill('qwertyuiop[]');
+  await page.getByRole('textbox', { name: 'Password' }).fill(password);
   await page.getByRole('textbox', { name: 'Password' }).press('Enter');
   await page.locator('iframe[name="ifmNavigator"]').contentFrame().locator('i').nth(3).click();
   await page.locator('iframe[name="ifmFucntionLocation"]').contentFrame().getByRole('textbox', { name: 'Search Process Name' }).click();
