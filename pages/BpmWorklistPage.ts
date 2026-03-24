@@ -73,6 +73,43 @@ export class BpmWorklistPage {
     await targetCell.click();
   }
 
+  async getProcessSubjectByProjectCodeIndex(processName: string, projectCode: string, index: number): Promise<string> {
+    const targetRow = this.getProcessRowsByProjectCodeInCurrentPage(processName, projectCode).nth(index);
+    const subjectCell = targetRow.getByRole('cell').nth(2);
+    const cellCount = await targetRow.getByRole('cell').count();
+    if (cellCount >= 3 && (await subjectCell.count()) > 0) {
+      const text = (await subjectCell.innerText()).trim();
+      if (text && text.length >= 15) {
+        return text;
+      }
+    }
+
+    return (await targetRow.innerText()).replace(/\s+/g, ' ').trim();
+  }
+
+  async hasReturnedPrefixForSubject(subject: string): Promise<boolean> {
+    const returnedRows = this.functionFrame
+      .locator('tr')
+      .filter({ hasText: '退回重辦' })
+      .filter({
+        hasNot: this.functionFrame.getByRole('columnheader'),
+      });
+
+    const tokenMatch = subject.match(/工時申請單-\d+/);
+    const token = tokenMatch?.[0];
+    if (token) {
+      return (await returnedRows.filter({ hasText: token }).count()) > 0;
+    }
+
+    const compactSubject = subject.replace(/\s+/g, ' ').trim();
+    if (!compactSubject) {
+      return (await returnedRows.count()) > 0;
+    }
+
+    const snippet = compactSubject.slice(0, 30);
+    return (await returnedRows.filter({ hasText: snippet }).count()) > 0;
+  }
+
   /**
    * 以「資料列」為單位過濾流程，避免直接用 cell.nth() 命中重複/隱藏節點造成同筆被重點。
    */
