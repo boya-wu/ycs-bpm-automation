@@ -6,7 +6,7 @@ import { BpmWorklistPage } from '../pages/BpmWorklistPage';
 type WorkItemStats = {
   formsChecked: number;
   workItemFilled: number;
-  exemptByWorkDesc: number;
+  emptyWorkItem: number;
   reexecuteAttempted: number;
   reexecuteVerifiedByPopup: number;
   reexecuteVerifiedByWorklistTag: number;
@@ -23,7 +23,7 @@ function formatWorkItemStats(s: WorkItemStats, projectCode: string, approvalComm
     `簽核內容參數: ${approvalComment}`,
     `工時申請單明細已開啟並檢查: ${s.formsChecked} 筆`,
     `  · #WorkItem_txt 有內容（非空白）: ${s.workItemFilled} 筆`,
-    `  · 工作說明含「無 workitem」而豁免內容檢查: ${s.exemptByWorkDesc} 筆`,
+    `  · #WorkItem_txt 為空（須退回重辦）: ${s.emptyWorkItem} 筆`,
     `  · 已嘗試退回筆數: ${s.reexecuteAttempted} 筆`,
     `  · 退回成功（popup 訊號）: ${s.reexecuteVerifiedByPopup} 筆`,
     `  · 退回成功（清單前綴）: ${s.reexecuteVerifiedByWorklistTag} 筆`,
@@ -70,7 +70,7 @@ test('每頁每列工時申請單都必須有填寫 Work Item', async ({ page })
   const stats: WorkItemStats = {
     formsChecked: 0,
     workItemFilled: 0,
-    exemptByWorkDesc: 0,
+    emptyWorkItem: 0,
     reexecuteAttempted: 0,
     reexecuteVerifiedByPopup: 0,
     reexecuteVerifiedByWorklistTag: 0,
@@ -98,7 +98,7 @@ test('每頁每列工時申請單都必須有填寫 Work Item', async ({ page })
       if (outcome === 'filled') {
         stats.workItemFilled += 1;
       } else {
-        stats.exemptByWorkDesc += 1;
+        stats.emptyWorkItem += 1;
         if (enableReexecute) {
           stats.reexecuteAttempted += 1;
           reexecuteResult = await detailPage.reexecuteWithComment(approvalComment);

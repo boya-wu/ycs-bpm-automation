@@ -1,7 +1,7 @@
 import { expect, type FrameLocator, type Locator, type Page } from '@playwright/test';
 
 /** 明細檢查結果（供測試統計） */
-export type WorkItemCheckOutcome = 'filled' | 'exempt_by_workdesc';
+export type WorkItemCheckOutcome = 'filled' | 'empty';
 export type ReexecuteResult = {
   popupVerified: boolean;
   signal: string;
@@ -37,50 +37,21 @@ export class BpmWorkItemDetailPage {
     await expect(frame.locator('body')).toBeVisible({ timeout: 15_000 });
 
     const workItem = this.workItemLocator(frame);
-
     await expect(workItem).toBeVisible({ timeout: 45_000 });
 
-    if (await this.shouldExemptWorkItemContent(frame)) {
-      return 'exempt_by_workdesc';
+    const handle = await workItem.elementHandle();
+    if (!handle) {
+      return 'empty';
     }
 
-    await expect
-      .poll(
-        async () => {
-          const handle = await workItem.elementHandle();
-          if (!handle) {
-            return 0;
-          }
+    const length = await handle.evaluate((el) => {
+      const inputLike = el as HTMLInputElement | HTMLTextAreaElement;
+      const value = typeof inputLike.value === 'string' ? inputLike.value : '';
+      const text = el.textContent ?? '';
+      return (value || text).trim().length;
+    });
 
-          return await handle.evaluate((el) => {
-            const inputLike = el as HTMLInputElement | HTMLTextAreaElement;
-            const value = typeof inputLike.value === 'string' ? inputLike.value : '';
-            const text = el.textContent ?? '';
-            return (value || text).trim().length;
-          });
-        },
-        { timeout: 15_000 },
-      )
-      .toBeGreaterThan(0);
-
-    return 'filled';
-  }
-
-  /** 表單於工作說明註記無需填 Work Item 時，不強制 #WorkItem_txt 有值（仍已驗證欄位存在） */
-  private async shouldExemptWorkItemContent(frame: FrameLocator): Promise<boolean> {
-    const desc = frame.locator('#WorkDesc');
-    if ((await desc.count()) === 0) {
-      return false;
-    }
-
-    let text = '';
-    try {
-      text = await desc.inputValue();
-    } catch {
-      text = (await desc.textContent()) ?? '';
-    }
-
-    return /無\s*workitem/i.test(text);
+    return length > 0 ? 'filled' : 'empty';
   }
 
   /**
@@ -113,13 +84,14 @@ export class BpmWorkItemDetailPage {
       return { popupVerified: false, signal: 'popup-not-opened' };
     }
 
-    await popup.waitForLoadState('domcontentloaded', { timeout: 20_000 });
-    const beforeUrl = popup.url();
-
     // 原生 confirm 若未 accept，系統會停在選擇頁不會真正送出。
+    // 必須在 waitForLoadState 之前掛載，避免頁面載入期間觸發的 dialog 被 Playwright 預設 dismiss。
     popup.on('dialog', (dialog) => {
       void dialog.accept().catch(() => {});
     });
+
+    await popup.waitForLoadState('domcontentloaded', { timeout: 20_000 });
+    const beforeUrl = popup.url();
 
     const activityRadio = popup.locator('input[name="rdoActivityInstOID"]').first();
     if ((await activityRadio.count()) > 0) {
@@ -139,16 +111,89 @@ export class BpmWorkItemDetailPage {
       await popupComment.fill(normalized);
     }
 
-    const confirmButton = popup
-      .getByRole('button', { name: /^確定$/ })
-      .or(popup.getByRole('button', { name: /^Confirm$/i }))
-      .or(popup.getByText(/^確定$/))
-      .or(popup.getByText(/^Confirm$/i));
-    await expect(confirmButton.first()).toBeVisible({ timeout: 20_000 });
-    await confirmButton.first().click();
+    // Reexecute 視窗內容常在 popup 的 iframe 內；僅對 Page 根層 getByRole 會找不到 Confirm。
+    await this.clickReexecuteConfirmInPopup(popup);
 
-    const verify = await this.verifyReexecuteSuccess(popup, beforeUrl);
-    return verify;
+    return this.verifyReexecuteSuccess(popup, beforeUrl);
+  }
+
+  /**
+   * 在 popup 內所有 frame（含巢狀 iframe）尋找可點擊的「確定 / Confirm」。
+   * 以 poll 等待可見且 enabled，且只在找到後 click 一次，避免輪詢中重複點擊。
+   */
+  private async clickReexecuteConfirmInPopup(popup: Page): Promise<boolean> {
+    let target: Locator | null = null;
+    try {
+      await expect
+        .poll(
+          async () => {
+            for (const frame of popup.frames()) {
+              // BPM Reexecute 視窗為 <div id="btnRexecute" class="bpm-dialog-main-buttom">Confirm</div>，無 semantic button role。
+              const byVendorId = frame.locator('#btnRexecute');
+              if ((await byVendorId.count()) > 0) {
+                const div = byVendorId.first();
+                const visible = await div.isVisible().catch(() => false);
+                if (visible) {
+                  target = div;
+                  return true;
+                }
+              }
+
+              const byRole = frame.getByRole('button', { name: /Confirm|確定/ });
+              const roleCount = await byRole.count();
+              for (let i = 0; i < roleCount; i += 1) {
+                const btn = byRole.nth(i);
+                const visible = await btn.isVisible().catch(() => false);
+                const enabled = visible ? await btn.isEnabled().catch(() => false) : false;
+                if (visible && enabled) {
+                  target = btn;
+                  return true;
+                }
+              }
+
+              const byLabel = frame
+                .getByText('Confirm', { exact: true })
+                .or(frame.getByText('確定', { exact: true }));
+              const labelCount = await byLabel.count();
+              for (let k = 0; k < labelCount; k += 1) {
+                const labelBtn = byLabel.nth(k);
+                const visible = await labelBtn.isVisible().catch(() => false);
+                const enabled = visible ? await labelBtn.isEnabled().catch(() => false) : false;
+                if (visible && enabled) {
+                  target = labelBtn;
+                  return true;
+                }
+              }
+
+              const legacy = frame.locator(
+                'input[type="submit"][value*="Confirm" i], input[type="button"][value*="Confirm" i], input[type="submit"][value*="確定"], input[type="button"][value*="確定"]',
+              );
+              const legacyCount = await legacy.count();
+              for (let j = 0; j < legacyCount; j += 1) {
+                const inp = legacy.nth(j);
+                const visible = await inp.isVisible().catch(() => false);
+                const enabled = visible ? await inp.isEnabled().catch(() => false) : false;
+                if (visible && enabled) {
+                  target = inp;
+                  return true;
+                }
+              }
+            }
+            return false;
+          },
+          { timeout: 20_000, intervals: [200, 400, 600, 1_000] },
+        )
+        .toBe(true);
+    } catch {
+      return false;
+    }
+
+    if (!target) {
+      return false;
+    }
+
+    await target.click();
+    return true;
   }
 
   /**
