@@ -13,7 +13,7 @@ export class BpmLoginPage {
     await this.page.goto(baseUrl);
   }
 
-  async login(username: string, password: string, locale: LoginLocale = 'zh'): Promise<void> {
+  async login(username: string, password: string, locale: LoginLocale = 'en'): Promise<void> {
     const { userTextbox, passwordTextbox } = await this.resolveLoginFields(locale);
 
     await userTextbox.click();
@@ -45,9 +45,7 @@ export class BpmLoginPage {
       }
     }
 
-    throw new Error(
-      `找不到登入文字框（已嘗試語系: ${order.join(', ')}）。可設定 BPM_LOGIN_LOCALE=en 或確認頁面無障礙標籤。`,
-    );
+    throw new Error(`找不到登入文字框（已嘗試語系: ${order.join(', ')}）。請確認頁面無障礙標籤是否變更。`);
   }
 
   private resolveUserTextbox(locale: LoginLocale) {

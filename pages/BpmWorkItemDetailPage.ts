@@ -7,6 +7,8 @@ export type ReexecuteResult = {
   signal: string;
 };
 
+type ReexecuteTypePreference = 'first' | 'prev';
+
 export class BpmWorkItemDetailPage {
   private readonly page: Page;
 
@@ -86,11 +88,24 @@ export class BpmWorkItemDetailPage {
 
     // 原生 confirm 若未 accept，系統會停在選擇頁不會真正送出。
     // 必須在 waitForLoadState 之前掛載，避免頁面載入期間觸發的 dialog 被 Playwright 預設 dismiss。
+    // 同時捕捉「第一個關卡」錯誤訊息，避免 popup 關閉後被誤判為退回成功。
+    let firstCheckpointError = false;
     popup.on('dialog', (dialog) => {
+      const msg = dialog.message();
+      if (msg.includes('第一個關卡') || msg.includes('沒有允許可退回') || msg.includes('免許可退回')) {
+        firstCheckpointError = true;
+      }
       void dialog.accept().catch(() => {});
     });
 
-    await popup.waitForLoadState('domcontentloaded', { timeout: 20_000 });
+    try {
+      await popup.waitForLoadState('domcontentloaded', { timeout: 20_000 });
+    } catch {
+      if (popup.isClosed()) {
+        return { popupVerified: true, signal: 'popup-closed-before-domcontentloaded' };
+      }
+      return { popupVerified: false, signal: 'popup-loadstate-failed' };
+    }
     const beforeUrl = popup.url();
 
     const activityRadio = popup.locator('input[name="rdoActivityInstOID"]').first();
@@ -100,11 +115,7 @@ export class BpmWorkItemDetailPage {
 
     const reexecuteTypeFirst = popup.locator('#rdoReexecuteType1');
     const reexecuteTypePrev = popup.locator('#rdoReexecuteType0');
-    if ((await reexecuteTypeFirst.count()) > 0) {
-      await reexecuteTypeFirst.check();
-    } else if ((await reexecuteTypePrev.count()) > 0) {
-      await reexecuteTypePrev.check();
-    }
+    await this.chooseReexecuteTypeRadio(popup, { first: reexecuteTypeFirst, prev: reexecuteTypePrev });
 
     const popupComment = popup.locator('#txaExecutiveComment');
     if ((await popupComment.count()) > 0) {
@@ -114,7 +125,69 @@ export class BpmWorkItemDetailPage {
     // Reexecute 視窗內容常在 popup 的 iframe 內；僅對 Page 根層 getByRole 會找不到 Confirm。
     await this.clickReexecuteConfirmInPopup(popup);
 
-    return this.verifyReexecuteSuccess(popup, beforeUrl);
+    const result = await this.verifyReexecuteSuccess(popup, beforeUrl);
+    // verifyReexecuteSuccess 的各段等待期間，dialog 事件必然已觸發並設定 flag。
+    // 若為「第一個關卡」錯誤，popup 關閉不代表退回成功，以此 override。
+    if (firstCheckpointError) {
+      return { popupVerified: false, signal: 'first-checkpoint-no-return' };
+    }
+    return result;
+  }
+
+  private parseReexecuteTypePreferenceFromEnv(): ReexecuteTypePreference | null {
+    const raw = process.env.BPM_REEXECUTE_TYPE?.trim();
+    if (!raw) {
+      return null;
+    }
+
+    // 支援兩種寫法：
+    // - 值 (與 input.value 對齊): 0(退回前一關) / 2(退回第一關)
+    // - 可讀字串: prev / first
+    if (raw === '0' || raw.toLowerCase() === 'prev') {
+      return 'prev';
+    }
+    if (raw === '2' || raw.toLowerCase() === 'first') {
+      return 'first';
+    }
+
+    throw new Error(`BPM_REEXECUTE_TYPE 無效: "${raw}"，允許值為 0|2|prev|first`);
+  }
+
+  private async chooseReexecuteTypeRadio(
+    popup: Page,
+    radios: { first: Locator; prev: Locator },
+  ): Promise<void> {
+    const prefer = this.parseReexecuteTypePreferenceFromEnv();
+    const hasFirst = (await radios.first.count()) > 0;
+    const hasPrev = (await radios.prev.count()) > 0;
+
+    if (!hasFirst && !hasPrev) {
+      return;
+    }
+
+    const pick = async (locator: Locator) => {
+      await expect(locator.first()).toBeVisible({ timeout: 10_000 });
+      await locator.first().check();
+    };
+
+    // 若兩者都存在：
+    // - 有設定 env：照設定選
+    // - 未設定 env：維持原預設（first 優先），避免改動既有行為
+    if (hasFirst && hasPrev) {
+      if (prefer === 'prev') {
+        await pick(radios.prev);
+        return;
+      }
+      await pick(radios.first);
+      return;
+    }
+
+    // 僅有一個存在時，直接勾選可用的那個。
+    if (hasFirst) {
+      await pick(radios.first);
+      return;
+    }
+    await pick(radios.prev);
   }
 
   /**

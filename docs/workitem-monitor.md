@@ -14,7 +14,6 @@ Configure in `.env`:
 - `BPM_TARGET_PROJECT_CODE` (optional, default: `DY23-0742`)
 - `BPM_APPROVAL_COMMENT` (optional, default: `請補上 WorkItem。`)
 - `BPM_ENABLE_REEXECUTE` (optional, default: `false`; set `true` to actually click "退回重辦")
-- `BPM_LOGIN_LOCALE` (optional: `zh` or `en`)
 - `BPM_MAX_PAGES` (optional, default: `100`)
 
 ## Manual Run
