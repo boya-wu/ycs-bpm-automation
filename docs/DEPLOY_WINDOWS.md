@@ -9,13 +9,33 @@
 ## 0. 你需要準備什麼
 
 - **Windows 10/11**
-- **Git for Windows（內含 Git Bash）**
 - **Node.js（建議 LTS 版本）**
 - （選配）**Python 3**：本專案主要用 Node/Playwright，Python 不是必需；但公司環境常會需要 Python 做額外的小工具，所以這份懶人包也附上安裝方式。
 
 ---
 
-## 1. 安裝 Node.js（必需）
+## 1. 同事一鍵安裝（推薦）
+
+如果你只是要「第一次裝好、之後讓排程自動跑」，請直接用一鍵腳本（不用 Git Bash）：
+
+1. 先確認你的電腦有其一：
+   - **Chocolatey (`choco`)**，或
+   - **winget**
+2. 到專案根目錄，雙擊執行：
+   - `scripts/bootstrap-windows.bat`
+
+它會自動完成：
+
+- 檢查 `choco/winget`
+- 安裝 Node.js LTS（若尚未安裝）
+- `npm` 安裝套件
+- `npx playwright install chromium`（只安裝 Chromium）
+
+> 小提醒：安裝 Node 可能需要「以系統管理員身分執行」。
+
+---
+
+## 2. 安裝 Node.js（必需，手動方式）
 
 1. 到 Node.js 官網下載 **LTS** 並安裝
 2. 安裝完成後開啟 **Git Bash**，確認版本：
@@ -29,7 +49,7 @@ npm -v
 
 ---
 
-## 2. 安裝 Python 3（選配）
+## 3. 安裝 Python 3（選配）
 
 1. 到 Python 官網下載 Python 3.x（建議 3.11+）
 2. 安裝時務必勾選 **Add python.exe to PATH**
@@ -61,7 +81,7 @@ pip install -r requirements.txt
 
 ---
 
-## 3. 下載專案（第一次）
+## 4. 下載專案（第一次）
 
 在 Git Bash 進到你要放專案的資料夾後：
 
@@ -74,7 +94,7 @@ cd ycs-bpm-automation
 
 ---
 
-## 4. 設定環境變數（必需）
+## 5. 設定環境變數（必需）
 
 本專案會從專案根目錄的 `.env` 讀設定。
 
@@ -94,7 +114,7 @@ cp .env.example .env
 
 ---
 
-## 5. 安裝套件（第一次 / 有更新時）
+## 6. 安裝套件（第一次 / 有更新時）
 
 在專案根目錄執行：
 
@@ -110,7 +130,7 @@ npx playwright install
 
 ---
 
-## 6. 手動跑一次（確認能動）
+## 7. 手動跑一次（確認能動）
 
 ### A) 跑「workitem 檢查」測試（單次）
 
@@ -130,7 +150,7 @@ npm run monitor:workitem
 
 ---
 
-## 7. 一鍵腳本（建議用）
+## 8. 一鍵腳本（給 Git Bash 使用者）
 
 我已經放了 Git Bash 腳本在 `./scripts/`：
 
@@ -146,11 +166,11 @@ bash ./scripts/run-monitor.sh
 
 ---
 
-## 8. Windows 工作排程器（Task Scheduler）設定
+## 9. Windows 工作排程器（Task Scheduler）設定
 
 目標：每天固定時間自動跑 `run-monitor.sh`，把結果記錄到 `logs/workitem-monitor.log`。
 
-### 8.1 找到 Git Bash 的 bash.exe
+### 9.1 找到 Git Bash 的 bash.exe
 
 常見位置（擇一）：
 
@@ -161,7 +181,7 @@ bash ./scripts/run-monitor.sh
 
 > 小提醒：有些環境 **不會把 bash 加到 PATH**，所以你在終端機打 `bash` 可能會「找不到指令」；排程器也一樣。這時候就用上面這種「完整路徑」指定即可。
 
-### 8.2 建立排程
+### 9.2 建立排程
 
 1. 打開「**工作排程器**」
 2. 右側按「**建立工作**」（不要用「基本工作」，設定比較完整）
@@ -183,7 +203,7 @@ bash ./scripts/run-monitor.sh
   - 若是筆電：可取消「只有在使用 AC 電源時才啟動」
   - 建議勾「如果工作執行時間超過…則停止」（例如 30 分鐘），避免卡死
 
-### 8.3 測試排程是否成功
+### 9.3 測試排程是否成功
 
 在工作排程器右鍵該工作 → **執行**，然後回到專案資料夾檢查：
 
@@ -191,7 +211,7 @@ bash ./scripts/run-monitor.sh
 
 ---
 
-## 9. 常見問題（最常踩）
+## 10. 常見問題（最常踩）
 
 - **排程跑不起來但手動可以**
   - 通常是「工作目錄」不對，所以我建議用 `-lc "cd ... && ..."` 這種寫法。

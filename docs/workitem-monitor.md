@@ -26,6 +26,18 @@ npm run monitor:workitem
 
 The command runs Playwright Chromium check and prints a single summary line.
 
+## One-click Bootstrap (Windows)
+
+For non-developers on Windows, you can bootstrap everything via:
+
+- `scripts/bootstrap-windows.bat`
+
+It will:
+
+- Ensure Node.js LTS exists (via `choco` or `winget`)
+- Install npm dependencies
+- Install Playwright browser: `chromium` only
+
 ## Output Format
 
 Success example:
