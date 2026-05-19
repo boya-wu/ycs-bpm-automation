@@ -15,6 +15,7 @@ Configure in `.env`:
 - `BPM_APPROVAL_COMMENT` (optional, default: `請補上 WorkItem。`)
 - `BPM_ENABLE_REEXECUTE` (optional, default: `false`; set `true` to actually click "退回重辦")
 - `BPM_MAX_PAGES` (optional, default: `100`)
+- `BPM_HEADED` (optional, default: `false`; set `true` to show the browser window for debugging—keep `false` for Task Scheduler)
 
 ## Manual Run
 
@@ -25,6 +26,18 @@ npm run monitor:workitem
 ```
 
 The command runs Playwright Chromium check and prints a single summary line.
+
+### Watch the browser (debug)
+
+In `.env`, set:
+
+```env
+BPM_HEADED="true"
+```
+
+Then run `npm run monitor:workitem` or `npm run test:workitem-check`. Both read `playwright.config.ts` and launch a visible Chromium window.
+
+Set back to `false` before enabling Windows Task Scheduler.
 
 ## One-click Bootstrap (Windows)
 

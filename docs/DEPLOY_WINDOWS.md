@@ -140,6 +140,14 @@ npx playwright install
 npm run test:workitem-check
 ```
 
+若要**肉眼觀看**瀏覽器操作（除錯用），在 `.env` 設：
+
+```env
+BPM_HEADED="true"
+```
+
+再執行上述指令；完成後請改回 `false`，避免排程也跳出視窗。
+
 ### B) 跑「monitor」模式（適合排程）
 
 ```bash

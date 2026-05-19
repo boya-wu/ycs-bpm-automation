@@ -10,6 +10,9 @@ import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 dotenv.config({ path: path.resolve(__dirname, '.env.local'), override: true });
 
+/** .env 設 BPM_HEADED=true 時顯示瀏覽器視窗（除錯用；排程請保持 false） */
+const headed = process.env.BPM_HEADED === 'true';
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -27,6 +30,8 @@ export default defineConfig({
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
+    headless: !headed,
+
     /* 2. 開發階段強制開啟 Trace，這對看紅點非常重要 */
     trace: 'on',
 
