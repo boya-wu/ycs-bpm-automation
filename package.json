@@ -9,6 +9,7 @@
   },
   "scripts": {
     "test:workitem-check": "playwright test tests/bpm-workitemCheck.spec.ts --project=chromium",
+    "test:workitem-adder": "playwright test tests/bpm-workitemAdder.spec.ts --project=chromium",
     "monitor:workitem": "node scripts/run-workitem-monitor.mjs"
   }
 }
