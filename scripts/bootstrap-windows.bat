@@ -90,9 +90,16 @@ if not exist ".env" (
   if exist ".env.example" (
     echo [bootstrap] .env not found, creating from .env.example
     copy /y ".env.example" ".env" >nul
-    echo [bootstrap] NOTE: Please edit .env and set PLAYWRIGHT_BPM_PASSWORD, etc.
+    echo [bootstrap] NOTE: Please edit .env for non-secret settings.
   ) else (
     echo [bootstrap] WARN: .env and .env.example not found. Continue anyway.
+  )
+)
+if not exist ".env.local" (
+  if exist ".env.local.example" (
+    echo [bootstrap] .env.local not found, creating from .env.local.example
+    copy /y ".env.local.example" ".env.local" >nul
+    echo [bootstrap] NOTE: Please edit .env.local and set PLAYWRIGHT_BPM_PASSWORD, etc.
   )
 )
 

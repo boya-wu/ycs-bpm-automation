@@ -96,21 +96,23 @@ cd ycs-bpm-automation
 
 ## 5. 設定環境變數（必需）
 
-本專案會從專案根目錄的 `.env` 讀設定。
+本專案會從專案根目錄的 `.env` 讀設定；`playwright.config.ts` 會再以 `.env.local` 覆寫（帳密等機密請只放 `.env.local`）。
 
 1. 複製範本：
 
 ```bash
 cp .env.example .env
+cp .env.local.example .env.local
 ```
 
-1. 用你習慣的編輯器打開 `.env`，至少要填：
+1. 用你習慣的編輯器打開 `.env.local`，至少要填：
 
 - `PLAYWRIGHT_BPM_USER`
 - `PLAYWRIGHT_BPM_PASSWORD`
-- （建議）`BPM_TARGET_PROJECT_CODE`
 
-> **不要**把 `.env` 提交到 git（裡面有密碼）。
+（建議）在 `.env` 設定 `BPM_TARGET_PROJECT_CODE` 等非機密項目。
+
+> **不要**把 `.env`、`.env.local` 提交到 git。
 
 ---
 

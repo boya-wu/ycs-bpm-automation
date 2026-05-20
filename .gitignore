@@ -123,8 +123,10 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments
+# Environments（機密僅放 .env / .env.local，勿提交）
 .env
+.env.local
+.env.*.local
 .venv
 env/
 venv/
