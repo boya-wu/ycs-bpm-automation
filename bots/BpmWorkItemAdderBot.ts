@@ -1,6 +1,6 @@
 ﻿import { expect, type Page } from '@playwright/test';
 
-import type { PmWorkItemRow } from '../data/default-pm-work-items';
+import type { PmWorkItemRow } from '../data/pm-work-item';
 
 export type WorkItemAdderOptions = {
   /** NaNaWeb 入口（登入用；CustomOpenWin 需先登入再開目標頁） */
