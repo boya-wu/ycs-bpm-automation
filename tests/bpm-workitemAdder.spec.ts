@@ -1,4 +1,7 @@
-﻿import { test } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
+
+import { test } from '@playwright/test';
 
 import { BpmWorkItemAdderBot } from '../bots/BpmWorkItemAdderBot';
 import {
@@ -28,12 +31,28 @@ function empIdFromUrl(url: string): string | undefined {
 }
 
 test('工時 PM — 檢查專案後建立 PM 對應與 Excel WorkItem', async ({ page }) => {
-  test.setTimeout(120_000);
+  // 資料量多時可能耗時較長，故設為 0 以停用 Test Timeout 限制
+  test.setTimeout(0);
 
   const workItemAddUrl = requireEnv('BPM_WORKITEM_ADD_URL');
   const workItemsXlsx =
     process.env.BPM_PM_WORK_ITEMS_XLSX?.trim() || DEFAULT_PM_WORK_ITEMS_XLSX;
-  const batches = loadPmWorkItemBatchesFromExcel(workItemsXlsx);
+
+  const resolvedPath = path.resolve(workItemsXlsx);
+  let xlsxFiles: string[] = [];
+
+  if (fs.existsSync(resolvedPath)) {
+    const stat = fs.statSync(resolvedPath);
+    if (stat.isDirectory()) {
+      xlsxFiles = fs.readdirSync(resolvedPath)
+        .filter((file) => file.endsWith('.xlsx') && !file.startsWith('~$'))
+        .map((file) => path.join(resolvedPath, file));
+    } else {
+      xlsxFiles = [resolvedPath];
+    }
+  } else {
+    throw new Error(`找不到指定的 Excel 檔案或資料夾路徑: ${resolvedPath}`);
+  }
 
   const fallbackProjectCode =
     process.env.BPM_WORKITEM_PROJECT_CODE?.trim() ||
@@ -48,26 +67,34 @@ test('工時 PM — 檢查專案後建立 PM 對應與 Excel WorkItem', async ({
   const user = requireEnv('PLAYWRIGHT_BPM_USER');
   const password = requireEnv('PLAYWRIGHT_BPM_PASSWORD');
 
-  for (const batch of batches) {
-    const projectCode = batch.projectCode || fallbackProjectCode;
-    const pmEmpId = batch.pmEmpId || fallbackPmEmpId;
-    if (!projectCode) {
-      throw new Error(
-        'Excel 未填「專案代號」且無環境變數 BPM_WORKITEM_PROJECT_CODE / BPM_TARGET_PROJECT_CODE',
-      );
-    }
-    if (!pmEmpId) {
-      throw new Error('Excel 未填「PM工號」且無環境變數 BPM_PM_EMP_ID 或 URL empid');
-    }
+  for (const file of xlsxFiles) {
+    console.log(`\n========== 開始處理 Excel: ${path.basename(file)} ==========`);
+    const batches = loadPmWorkItemBatchesFromExcel(file);
 
-    await bot.run({
-      loginEntryUrl,
-      workItemAddUrl,
-      user,
-      password,
-      projectCode,
-      pmEmpId,
-      workItems: batch.workItems,
-    });
+    for (const batch of batches) {
+      const projectCode = batch.projectCode || fallbackProjectCode;
+      const pmEmpId = batch.pmEmpId || fallbackPmEmpId;
+      if (!projectCode) {
+        throw new Error(
+          `Excel [${path.basename(file)}] 未填「專案代號」且無環境變數 BPM_WORKITEM_PROJECT_CODE / BPM_TARGET_PROJECT_CODE`,
+        );
+      }
+      if (!pmEmpId) {
+        throw new Error(`Excel [${path.basename(file)}] 未填「PM工號」且無環境變數 BPM_PM_EMP_ID 或 URL empid`);
+      }
+
+      console.log(`-> 正在匯入專案: ${projectCode}, PM工號: ${pmEmpId}, 共 ${batch.workItems.length} 筆 WorkItems`);
+      await bot.run({
+        loginEntryUrl,
+        workItemAddUrl,
+        user,
+        password,
+        projectCode,
+        pmEmpId,
+        workItems: batch.workItems,
+      });
+    }
+    console.log(`========== 完成處理 Excel: ${path.basename(file)} ==========\n`);
   }
 });
+

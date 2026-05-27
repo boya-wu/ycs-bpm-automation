@@ -1,4 +1,4 @@
-﻿import { expect, type Page } from '@playwright/test';
+import { expect, type Page, type Dialog } from '@playwright/test';
 
 import type { PmWorkItemRow } from '../data/pm-work-item';
 
@@ -23,21 +23,29 @@ export class BpmWorkItemAdderBot {
   constructor(private readonly page: Page) {}
 
   async run(opts: WorkItemAdderOptions): Promise<void> {
-    await this.ensureLoggedIn(opts.loginEntryUrl, opts.user, opts.password);
-    await this.openPmPage(opts.workItemAddUrl);
-    await this.searchProject(opts.projectCode);
+    const dialogHandler = (dialog: Dialog) => {
+      dialog.accept().catch(() => {});
+    };
+    this.page.on('dialog', dialogHandler);
 
-    if (await this.isProjectMissing()) {
-      await this.createProjectPmMapping(opts.projectCode, opts.pmEmpId);
+    try {
+      await this.ensureLoggedIn(opts.loginEntryUrl, opts.user, opts.password);
+      await this.openPmPage(opts.workItemAddUrl);
       await this.searchProject(opts.projectCode);
-    }
 
-    await this.expectProjectExists(opts.projectCode);
-    await this.openWorkItemEditor(opts.projectCode);
+      if (await this.isProjectMissing()) {
+        await this.createProjectPmMapping(opts.projectCode, opts.pmEmpId);
+        await this.searchProject(opts.projectCode);
+      }
 
-    for (const row of opts.workItems) {
-      this.page.once('dialog', (d) => void d.accept());
-      await this.addWorkItemRow(row);
+      await this.expectProjectExists(opts.projectCode);
+      await this.openWorkItemEditor(opts.projectCode);
+
+      for (const row of opts.workItems) {
+        await this.addWorkItemRow(row);
+      }
+    } finally {
+      this.page.off('dialog', dialogHandler);
     }
   }
 
@@ -90,7 +98,6 @@ export class BpmWorkItemAdderBot {
     await expect(this.page.getByRole('cell', { name: '無相關資料' })).toBeVisible();
     await this.page.locator('#txtProject').fill(projectCode);
     await this.page.locator('#txtPMEmp').fill(pmEmpId);
-    this.page.once('dialog', (d) => void d.accept());
     await this.page.getByRole('button', { name: '新增' }).click();
     await expect(this.page.getByRole('cell', { name: '無相關資料' })).toBeHidden({ timeout: 15_000 });
   }

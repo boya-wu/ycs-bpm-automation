@@ -4,7 +4,8 @@ import * as XLSX from 'xlsx';
 
 import type { PmWorkItemBatch, PmWorkItemRow } from './pm-work-item';
 
-export const DEFAULT_PM_WORK_ITEMS_XLSX = path.join(__dirname, 'pm-work-items.xlsx');
+export const DEFAULT_PM_WORK_ITEMS_XLSX = path.join(__dirname, '..', 'docs', 'PM', 'pm-work-items - Iris.xlsx');
+
 
 const DATA_SHEET_NAMES = ['批次', 'WorkItems', '工作項目'] as const;
 const SKIP_SHEET_NAMES = new Set(['說明', 'README', '範例說明']);
