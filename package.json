@@ -1,4 +1,4 @@
-﻿{
+{
   "dependencies": {
     "playwright": "^1.58.2",
     "xlsx": "^0.18.5"
@@ -9,9 +9,7 @@
     "dotenv": "^17.3.1"
   },
   "scripts": {
-    "test:workitem-check": "playwright test tests/bpm-workitemCheck.spec.ts --project=chromium",
     "test:workitem-adder": "playwright test tests/bpm-workitemAdder.spec.ts --project=chromium",
-    "generate:pm-work-items-template": "node scripts/generate-pm-work-items-template.mjs",
-    "monitor:workitem": "node scripts/run-workitem-monitor.mjs"
+    "generate:pm-work-items-template": "node scripts/generate-pm-work-items-template.mjs"
   }
 }

@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('test', async ({ page }) => {
   await page.goto('https://efgp.yuchens.com:8086/NaNaWeb/GP//ForwardIndex?hdnMethod=findIndexForward');
+  await page.getByRole('combobox').selectOption('zh_TW');
   await page.getByRole('textbox', { name: 'LDAP 代 號' }).click();
   await page.getByRole('textbox', { name: 'LDAP 代 號' }).fill('boyawu');
   await page.getByRole('textbox', { name: '密 碼' }).fill('qwertyuiop[]');

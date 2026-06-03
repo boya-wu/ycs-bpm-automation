@@ -134,10 +134,10 @@ npx playwright install
 
 ## 7. 手動跑一次（確認能動）
 
-### A) 跑「workitem 檢查」測試（單次）
+### A) 跑「workitem 新增」測試
 
 ```bash
-npm run test:workitem-check
+npm run test:workitem-adder
 ```
 
 若要**肉眼觀看**瀏覽器操作（除錯用），在 `.env` 設：
@@ -146,85 +146,10 @@ npm run test:workitem-check
 BPM_HEADED="true"
 ```
 
-再執行上述指令；完成後請改回 `false`，避免排程也跳出視窗。
-
-### B) 跑「monitor」模式（適合排程）
-
-```bash
-npm run monitor:workitem
-```
-
-成功/失敗都會寫入：
-
-- `./logs/workitem-monitor.log`
-
 ---
 
-## 8. 一鍵腳本（給 Git Bash 使用者）
+## 8. 常見問題（最常踩）
 
-我已經放了 Git Bash 腳本在 `./scripts/`：
-
-- `./scripts/bootstrap-windows.sh`：第一次/更新時安裝依賴
-- `./scripts/run-monitor.sh`：跑一次 monitor（排程就是跑這個）
-
-使用方法（在專案根目錄）：
-
-```bash
-bash ./scripts/bootstrap-windows.sh
-bash ./scripts/run-monitor.sh
-```
-
----
-
-## 9. Windows 工作排程器（Task Scheduler）設定
-
-目標：每天固定時間自動跑 `run-monitor.sh`，把結果記錄到 `logs/workitem-monitor.log`。
-
-### 9.1 找到 Git Bash 的 bash.exe
-
-常見位置（擇一）：
-
-- `C:/Program Files/Git/bin/bash.exe`
-- `C:/Program Files/Git/usr/bin/bash.exe`
-
-你可以在檔案總管搜尋 `bash.exe`。
-
-> 小提醒：有些環境 **不會把 bash 加到 PATH**，所以你在終端機打 `bash` 可能會「找不到指令」；排程器也一樣。這時候就用上面這種「完整路徑」指定即可。
-
-### 9.2 建立排程
-
-1. 打開「**工作排程器**」
-2. 右側按「**建立工作**」（不要用「基本工作」，設定比較完整）
-3. **一般** 分頁
-  - 名稱：`ycs-bpm-workitem-monitor`
-  - 勾選：**不論使用者是否登入都要執行**
-  - 勾選：**以最高權限執行**（公司電腦常需要）
-4. **觸發程序** 分頁
-  - 新增：每天 / 每 10 分鐘一次 / 你想要的頻率
-5. **動作** 分頁 → 新增
-  - **程式或指令碼**：填你的 bash.exe（例如 `C:/Program Files/Git/bin/bash.exe`）
-  - **新增引數**（重要，整段照貼，改路徑）：
-
-```bash
--lc "cd /c/Users/Administrator/Documents/GitHub/ycs-bpm-automation && bash ./scripts/run-monitor.sh"
-```
-
-1. **條件/設定** 分頁
-  - 若是筆電：可取消「只有在使用 AC 電源時才啟動」
-  - 建議勾「如果工作執行時間超過…則停止」（例如 30 分鐘），避免卡死
-
-### 9.3 測試排程是否成功
-
-在工作排程器右鍵該工作 → **執行**，然後回到專案資料夾檢查：
-
-- `./logs/workitem-monitor.log` 是否新增一行
-
----
-
-## 10. 常見問題（最常踩）
-
-- **排程跑不起來但手動可以**
-  - 通常是「工作目錄」不對，所以我建議用 `-lc "cd ... && ..."` 這種寫法。
 - **找不到瀏覽器 / Playwright 失敗**
   - 重跑：
 
@@ -234,4 +159,3 @@ npx playwright install
 
 - **密碼含特殊字元**
   - `.env` 建議用雙引號包起來：`PLAYWRIGHT_BPM_PASSWORD="p@ss word!"`
-

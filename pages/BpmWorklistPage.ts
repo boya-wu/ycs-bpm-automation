@@ -22,24 +22,17 @@ export class BpmWorklistPage {
     });
   }
 
-  /** 從表單明細返回待辦清單（明細頁無 #lblPcPageInfo，需先點返回） */
+  /** 從表單明細返回待辦清單 */
   async backToWorkListFromDetailIfVisible(): Promise<void> {
-    const frame = this.functionFrame;
-
-    if (await frame.locator('#lblPcPageInfo').isVisible()) {
+    if (await this.functionFrame.locator('#lblPcPageInfo').isVisible()) {
       return;
     }
 
-    const backByA11y = frame.locator('[aria-label="Back To Work List"], [title="Back To Work List"]');
-    const backByCell = frame
-      .getByRole('cell', { name: /Back To Work List/i })
-      .getByText('Back To Work List', { exact: true });
-    const backZh = frame.getByRole('cell', { name: /返回工作清單/ }).getByText('返回工作清單', { exact: true });
+    // YAGNI 原則：直接定位最外層主網頁的返回按鈕並執行點擊
+    const outerBack = this.page.locator('#btnBackWorkItemList');
+    await expect(outerBack).toBeVisible({ timeout: 15_000 });
+    await outerBack.click();
 
-    const back = backByA11y.or(backByCell).or(backZh);
-
-    await expect(back.first()).toBeVisible({ timeout: 15_000 });
-    await back.first().click();
     await this.waitUntilReady({ timeout: 30_000 });
   }
 
